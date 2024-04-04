@@ -13,7 +13,6 @@
 #include "../inc/CortexM.h"
 #include "../inc/PLL.h"
 #include "../inc/LaunchPad.h"
-#include "../inc/Timer5A.h"
 #include "../inc/Timer0A.h"
 #include "../inc/Timer1A.h"
 #include "../inc/Timer2A.h"
@@ -24,6 +23,7 @@
 #include "../RTOS_Labs_common/ST7735.h"
 #include "../inc/ADCT0ATrigger.h"
 #include "../RTOS_Labs_common/UART0int.h"
+#include "../RTOS_Labs_common/heap.h"
 #include "../RTOS_Labs_common/eFile.h"
 #include "../RTOS_Lab2_RTOSkernel/TCB.h"
 
@@ -42,16 +42,13 @@ extern int ContextSwitch(void);
 
 // Initialize Variables
 #define MAXTHREADS  10        // maximum number of threads
-#define STACKSIZE   100      // number of 32-bit words in stack
 
 void(*SW1Task)(void);
 
 uint8_t num_threads = 0;
-TCB_t tcbs[MAXTHREADS];
 TCB_t *RunPt = NULL;
 TCB_t *head = NULL;
 TCB_t *tail = NULL;
-int32_t Stacks[MAXTHREADS][STACKSIZE];
 
 mailbox_t data_mailbox;
 fifo_t data_fifo;
@@ -82,6 +79,7 @@ void SysTick_Handler(void) {
 	
 	//ContextSwitch 
 	ContextSwitch();
+	
 	//PD3 ^= 0x08;
 } // end SysTick_Handler
 
@@ -113,6 +111,7 @@ void SysTick_Init(unsigned long period){
 void OS_Init(void){
   // put Lab 2 (and beyond) solution here
 	PLL_Init(Bus80MHz);
+	Heap_Init();
 	DisableInterrupts();
 }; 
 
@@ -189,23 +188,22 @@ void OS_bSignal(Sema4Type *semaPt){
 	EndCritical(status);
 }; 
 
-void SetInitialStack(int i){
-  tcbs[i].thread_sp = &Stacks[i][STACKSIZE-16]; // thread stack pointer
-  Stacks[i][STACKSIZE-1] = 0x01000000; // thumb bit
-  Stacks[i][STACKSIZE-3] = 0x14141414; // R14
-  Stacks[i][STACKSIZE-4] = 0x12121212; // R12
-  Stacks[i][STACKSIZE-5] = 0x03030303; // R3
-  Stacks[i][STACKSIZE-6] = 0x02020202; // R2
-  Stacks[i][STACKSIZE-7] = 0x01010101; // R1
-  Stacks[i][STACKSIZE-8] = 0x00000000; // R0
-  Stacks[i][STACKSIZE-9] = 0x11111111; // R11
-  Stacks[i][STACKSIZE-10] = 0x10101010; // R10
-  Stacks[i][STACKSIZE-11] = 0x09090909; // R9
-  Stacks[i][STACKSIZE-12] = 0x08080808; // R8
-  Stacks[i][STACKSIZE-13] = 0x07070707; // R7
-  Stacks[i][STACKSIZE-14] = 0x06060606; // R6
-  Stacks[i][STACKSIZE-15] = 0x05050505; // R5
-  Stacks[i][STACKSIZE-16] = 0x04040404; // R4
+void SetInitialStack(stack_t *stack){
+	stack->buffer[STACKSIZE-1] = 0x01000000; // thumb bit
+	stack->buffer[STACKSIZE-3] = 0x14141414; // R14
+	stack->buffer[STACKSIZE-4] = 0x12121212; // R12
+	 stack->buffer[STACKSIZE-5] = 0x03030303; // R3
+	 stack->buffer[STACKSIZE-6] = 0x02020202; // R2
+	 stack->buffer[STACKSIZE-7] = 0x01010101; // R1
+	 stack->buffer[STACKSIZE-8] = 0x00000000; // R0
+	 stack->buffer[STACKSIZE-9] = 0x11111111; // R11
+	 stack->buffer[STACKSIZE-10] = 0x10101010; // R10
+	 stack->buffer[STACKSIZE-11] = 0x09090909; // R9
+	 stack->buffer[STACKSIZE-12] = 0x08080808; // R8
+	 stack->buffer[STACKSIZE-13] = 0x07070707; // R7
+	 stack->buffer[STACKSIZE-14] = 0x06060606; // R6
+	 stack->buffer[STACKSIZE-15] = 0x05050505; // R5
+  stack->buffer[STACKSIZE-16] = 0x04040404; // R4
 }
 
 
@@ -221,60 +219,48 @@ void SetInitialStack(int i){
 int OS_AddThread(void(*task)(void), 
    uint32_t stackSize, uint32_t priority){
 
+	if(num_threads > MAXTHREADS){
+		return 0;
+	}
+
   int32_t status = StartCritical();
-		 
-	//cycle through
-	
-	int index = -1;
-	if(num_threads >= MAXTHREADS){ //if array is full
-		for(int i = 0; i < MAXTHREADS; i++){ //cycle through and find killed tcb space
-			if(tcbs[i].killed == 1){
-				index = i;
-				break;
-			}
-		}
-	} else {
-		index = num_threads; //array is not full
-	}
-	if(index == -1){ //no spot found
+
+  TCB_t *thread = (TCB_t*) Heap_Malloc(sizeof(TCB_t));
+	if(thread == 0){
 		EndCritical(status);
-    return 0;
+		return 0;
 	}
 	
+	stack_t *stack_pointer = (stack_t*) Heap_Malloc(sizeof(stack_t));
+	if(stack_pointer == 0){
+		Heap_Free(thread);
+		EndCritical(status);
+		return 0;
+	}
 	
-//  if(num_threads == MAXTHREADS){
-//    EndCritical(status);
-//    return 0;
-//  }
-//  else{
-    if(num_threads == 0){
-      RunPt = &tcbs[0];
-      head = &tcbs[0];
-			tcbs[0].next_TCB = head;
-    }
-    else{
-      //doubly circular linked list
-//      tcbs[num_threads-1].next_TCB = &tcbs[num_threads]; //previous last TCB points to new TCB
-//      tcbs[num_threads].next_TCB = head; //new TCB points to head
-//      tcbs[num_threads].prev_TCB = &tcbs[num_threads-1]; //new TCB points to previous last TCB
-//      head->prev_TCB = &tcbs[num_threads]; //head points to new TCB
-			
-			tail->next_TCB = &tcbs[index]; //previous last TCB's next is new TCB
-			tcbs[index].next_TCB = head; //new TCB's next is head
-			tcbs[index].prev_TCB = tail; //new TCB's previous is tail
-			head->prev_TCB = &tcbs[index]; //head's previous is new TCB
-			
-    }
-    SetInitialStack(index);
-    Stacks[index][STACKSIZE-2] = (int32_t)(task); //PC
-    tcbs[index].id = num_threads;
-    tcbs[index].sleep_state = 0;
-    tcbs[index].priority = priority;
-		tcbs[index].killed = 0;
-		tail = &tcbs[index];
-    num_threads++;
-    EndCritical(status);
-    return 1;
+	if(num_threads == 0){
+		RunPt = thread;
+		head = thread;
+		head->next_TCB = thread;
+	}
+
+  tail->next_TCB = thread; //previous last TCB's next is new TCB
+  thread->next_TCB = head; //new TCB's next is head
+  thread->prev_TCB = tail; //new TCB's previous is tail
+  head->prev_TCB = thread; //head's previous is new TCB
+	tail = thread; //new TCB is now the tail
+
+	thread->stack_top = (int32_t*) stack_pointer;
+	thread->thread_sp = &stack_pointer->buffer[STACKSIZE-16]; // thread stack pointer
+	SetInitialStack(stack_pointer);
+	stack_pointer->buffer[STACKSIZE-2] = (int32_t)(task); //PC
+	thread->id = num_threads;
+	thread->sleep_state = 0;
+	thread->priority = priority;
+	thread->killed = 0;
+	num_threads++;
+	EndCritical(status);
+	return 1;
   }
 //}
 
@@ -329,7 +315,7 @@ int OS_AddPeriodicThread(void(*task)(void),
    uint32_t period, uint32_t priority){
   // put Lab 2 (and beyond) solution here
 		 long status = StartCritical();
-		 if(timerCount > 3){
+		 if(timerCount > 2){
 			 return 0;
 		 }
 		 switch(timerCount){
@@ -339,8 +325,6 @@ int OS_AddPeriodicThread(void(*task)(void),
 				 Timer1A_Init(task, period, priority); break;
 			 case 2:
 				 Timer2A_Init(task, period, priority); break;
-			 case 3:
-				 Timer3A_Init(task, period, priority); break;
 		 }
 		 timerCount++;
 		 EndCritical(status);
@@ -352,13 +336,16 @@ int OS_AddPeriodicThread(void(*task)(void),
   PF1 Interrupt Handler
  *----------------------------------------------------------------------------*/
 void GPIOPortF_Handler(void){
- // if PF0 pressed
-	if ((GPIO_PORTF_RIS_R & 0x01)) {
-		//call SW1 Task
-		(*SW1Task)();
-		GPIO_PORTF_ICR_R |= 0x01;			// acknowledge flag
-		
-	}
+  if (GPIO_PORTF_RIS_R & 0x10) { //if trigger flag set SW1/PF4
+    SW1Task();
+    GPIO_PORTF_ICR_R = 0x10; // clear trigger flag
+    GPIO_PORTF_IM_R |= 0x10; // rearm interrupt
+  }
+//  if (GPIO_PORTF_RIS_R & 0x01) { //if trigger flag set SW2/PF0
+//    SW2Task();
+//    GPIO_PORTF_ICR_R = 0x01; // clear trigger flag
+//    GPIO_PORTF_IM_R |= 0x01; // rearm interrupt
+//  }
 }
 
 //******** OS_AddSW1Task *************** 
@@ -458,6 +445,7 @@ void OS_Kill(void){
 	
 	//reclaim space
 	RunPt->killed = 1;
+	num_threads--;
 	
 	ContextSwitch();//check
   EnableInterrupts();   // end of atomic section 
@@ -637,7 +625,7 @@ void time_upd_ms(){
 // Outputs: none
 // You are free to change how this works
 void OS_ClearMsTime(void){
-  Timer5A_Init(time_upd_ms, 80000000/1000, 4);  //1 ms resolution
+  Timer3A_Init(time_upd_ms, 80000000/1000, 4);  //1 ms resolution
 	system_ms_time = 0;
 };
 
@@ -719,4 +707,3 @@ int OS_RedirectToST7735(void){
   
   return 1;
 }
-

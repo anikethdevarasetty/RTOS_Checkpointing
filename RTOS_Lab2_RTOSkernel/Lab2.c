@@ -611,78 +611,9 @@ int Testmain5(void){   // Testmain5
   return 0;            // this never executes
 }
 
-//*******************Measurement of context switch time**********
-// Run this to measure the time it takes to perform a task switch
-// UART0 not needed 
-// SYSTICK interrupts, period established by OS_Launch
-// first timer not needed
-// second timer not needed
-// SW1 not needed, 
-// SW2 not needed
-// logic analyzer on PF1 for systick interrupt (in your OS)
-//                on PD0 to measure context switch time
-void ThreadCS(void){       // only thread running
-  while(1){
-    PD0 ^= 0x01;      // debugging profile  
-  }
-}
-int TestmainCS(void){       // TestmainCS
-  PortD_Init();
-  OS_Init();           // initialize, disable interrupts
-  NumCreated = 0 ;
-  NumCreated += OS_AddThread(&ThreadCS,128,0); 
-  OS_Launch(TIME_1MS/10); // 100us, doesn't return, interrupts enabled in here
-  return 0;             // this never executes
-}
-
-//*******************FIFO TEST**********
-// FIFO test
-// Count1 should exactly equal Count2
-// Count3 should be very large
-// Timer interrupts, with period established by OS_AddPeriodicThread
-uint32_t OtherCount1;
-uint32_t Expected8; // last data read+1
-uint32_t Error8;
-void ConsumerThreadFIFO(void){        
-  Count2 = 0;          
-  for(;;){
-    OtherCount1 = OS_Fifo_Get();
-    if(OtherCount1 != Expected8){
-      Error8++;
-    }
-    Expected8 = OtherCount1+1; // should be sequential
-    Count2++;     
-  }
-}
-void FillerThreadFIFO(void){
-  Count3 = 0;          
-  for(;;){
-		PD2 ^= 0x04;       // heartbeat
-    Count3++;
-  }
-}
-void BackgroundThreadFIFOProducer(void){   // called periodically
-  if(OS_Fifo_Put(Count1) == 0){ // send to consumer
-    DataLost++;
-  }
-  Count1++;
-}
-
-int TestmainFIFO(void){   // TestmainFIFO
-  Count1 = 0;     DataLost = 0;  
-  Expected8 = 0;  Error8 = 0;
-  OS_Init();           // initialize, disable interrupts
-  NumCreated = 0 ;
-  OS_AddPeriodicThread(&BackgroundThreadFIFOProducer,120000,0); //Changed from PERIOD
-  OS_Fifo_Init(16);
-  NumCreated += OS_AddThread(&ConsumerThreadFIFO,128,0); 
-  NumCreated += OS_AddThread(&FillerThreadFIFO,128,0); 
-  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
-  return 0;            // this never executes
-}
 
 //*******************Trampoline for selecting main to execute**********
 int main(void) { 			// main 
 	PortD_Init();       // profile user threads
-	Testmain2();
+	Testmain5();
 }

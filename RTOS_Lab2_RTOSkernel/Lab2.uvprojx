@@ -549,6 +549,26 @@
               <FileType>5</FileType>
               <FilePath>..\inc\Timer4A.h</FilePath>
             </File>
+            <File>
+              <FileName>ff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\RTOS_Labs_common\ff.c</FilePath>
+            </File>
+            <File>
+              <FileName>integer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RTOS_Labs_common\integer.h</FilePath>
+            </File>
+            <File>
+              <FileName>ffconf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RTOS_Labs_common\ffconf.h</FilePath>
+            </File>
+            <File>
+              <FileName>heap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\RTOS_Labs_common\heap.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
