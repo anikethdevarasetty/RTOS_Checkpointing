@@ -106,18 +106,31 @@ ContextSwitch
 ;              know that it will only be run when no other exception or interrupt is active, and
 ;              therefore safe to assume that context being switched out was using the process stack (PSP).
 ;********************************************************************************************************
+		IMPORT    Heap_Free
+
 
 PendSV_Handler
     CPSID I
     PUSH {R4-R11}; These are the registers not automatically saved on interrupt
     LDR R0, =RunPt; R0 = pointer to the pointer of the current TCB block
     LDR R1, [R0]
+	MOV R3, R1
     STR SP, [R1]; thread_sp is the first thing in the TCB
 sleeping
     LDR R1, [R1, #4]; Loading pointer to the next TCB
-	LDRB R2, [R1, #12] ;load sleep counter
+	LDRB R2, [R1, #16] ;load sleep counter
 	CMP R2, #0
 	BNE sleeping ;branch back if sleepcount is not zero
+	LDRB R2, [R3, #20] ;load killed value
+	CMP R2, #0
+	BEQ switch ;if killed is 0 then not killed go to switch
+	PUSH {R0-R3, LR} ;save runpt address and LR
+	LDR R0, [R3, #12] ;load stack top
+	BL Heap_Free ;reclaim stack space
+	MOV R0, R3 ;move thread pointer to r0
+	BL Heap_Free ;reclaim tcb space
+	POP {R0-R3, LR} ;restore runpt address and LR
+switch
     STR R1, [R0]
     LDR SP, [R1]
     POP {R4-R11}; Pop the registers for this new thread

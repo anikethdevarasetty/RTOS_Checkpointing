@@ -28,6 +28,7 @@
 // PE2 Ain1 sampled at 250Hz, sequencer 0, by Producer, timer tigger
 
 #include <stdint.h>
+#include <stdio.h>
 #include "../inc/tm4c123gh6pm.h"
 #include "../inc/CortexM.h"
 #include "../inc/LaunchPad.h"
@@ -35,11 +36,15 @@
 #include "../inc/LPF.h"
 #include "../RTOS_Labs_common/UART0int.h"
 #include "../RTOS_Labs_common/ADC.h"
+#include "../RTOS_Labs_common/heap.h"
+#include "../RTOS_Labs_common/eDisk.h"
 #include "../inc/ADCT0ATrigger.h"
 #include "../inc/IRDistance.h"
 #include "../RTOS_Labs_common/OS.h"
 #include "../RTOS_Labs_common/Interpreter.h"
 #include "../RTOS_Labs_common/ST7735.h"
+#include "../RTOS_Labs_common/eFile.h"
+
 
 
 //Dump Array
@@ -446,7 +451,8 @@ int Testmain2(void){  // Testmain2
 // no calls to semaphores
 // tests AddThread, Sleep and Kill
 void Thread1c(void){ int i;
-  Count1 = 0;          
+  Count1 = 0;  
+	//ST7735_Message(0, 2, "numcreated: ", NumCreated);
   for(i=0;i<=42;i++){
     PD0 ^= 0x01;       // heartbeat
     Count1++;
@@ -592,6 +598,7 @@ void Thread4e(void){ int i;
   OS_Kill();
 }
 void BackgroundThread5e(void){   // called when Select button pushed
+	ST7735_Message(0, 1, "Numcreated: ", NumCreated);
   NumCreated += OS_AddThread(&Thread4e,128,0); 
 }
 
@@ -611,78 +618,41 @@ int Testmain5(void){   // Testmain5
   return 0;            // this never executes
 }
 
-//*******************Measurement of context switch time**********
-// Run this to measure the time it takes to perform a task switch
-// UART0 not needed 
-// SYSTICK interrupts, period established by OS_Launch
-// first timer not needed
-// second timer not needed
-// SW1 not needed, 
-// SW2 not needed
-// logic analyzer on PF1 for systick interrupt (in your OS)
-//                on PD0 to measure context switch time
-void ThreadCS(void){       // only thread running
-  while(1){
-    PD0 ^= 0x01;      // debugging profile  
-  }
-}
-int TestmainCS(void){       // TestmainCS
-  PortD_Init();
-  OS_Init();           // initialize, disable interrupts
-  NumCreated = 0 ;
-  NumCreated += OS_AddThread(&ThreadCS,128,0); 
-  OS_Launch(TIME_1MS/10); // 100us, doesn't return, interrupts enabled in here
-  return 0;             // this never executes
-}
 
-//*******************FIFO TEST**********
-// FIFO test
-// Count1 should exactly equal Count2
-// Count3 should be very large
-// Timer interrupts, with period established by OS_AddPeriodicThread
-uint32_t OtherCount1;
-uint32_t Expected8; // last data read+1
-uint32_t Error8;
-void ConsumerThreadFIFO(void){        
-  Count2 = 0;          
-  for(;;){
-    OtherCount1 = OS_Fifo_Get();
-    if(OtherCount1 != Expected8){
-      Error8++;
-    }
-    Expected8 = OtherCount1+1; // should be sequential
-    Count2++;     
-  }
-}
-void FillerThreadFIFO(void){
-  Count3 = 0;          
-  for(;;){
-		PD2 ^= 0x04;       // heartbeat
-    Count3++;
-  }
-}
-void BackgroundThreadFIFOProducer(void){   // called periodically
-  if(OS_Fifo_Put(Count1) == 0){ // send to consumer
-    DataLost++;
-  }
-  Count1++;
-}
-
-int TestmainFIFO(void){   // TestmainFIFO
-  Count1 = 0;     DataLost = 0;  
-  Expected8 = 0;  Error8 = 0;
-  OS_Init();           // initialize, disable interrupts
-  NumCreated = 0 ;
-  OS_AddPeriodicThread(&BackgroundThreadFIFOProducer,120000,0); //Changed from PERIOD
-  OS_Fifo_Init(16);
-  NumCreated += OS_AddThread(&ConsumerThreadFIFO,128,0); 
-  NumCreated += OS_AddThread(&FillerThreadFIFO,128,0); 
-  OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
-  return 0;            // this never executes
+int TestmainFile(){
+	PLL_Init(Bus80MHz);
+	Heap_Init();
+	NumCreated = 0 ;
+  NumCreated += OS_AddThread(&Thread2e,128,0); 
+  NumCreated += OS_AddThread(&Thread3e,128,0); 
+  NumCreated += OS_AddThread(&Thread4e,128,0); 
+	OS_AddPeriodicThread(&disk_timerproc,TIME_1MS,0);   // time out routines for disk
+	
+	ST7735_Message(0, 1, "heap test start", 1);
+	
+	if(eFile_Create("heap.txt")) {
+		ST7735_Message(0, 1, "create error", 1);
+		//return 1;
+	}
+	if (eFile_WOpen("heap.txt")){
+		ST7735_Message(0, 1, "open error", 1);
+		return 1;
+	}
+	for(int i = 0; i < 2000; i++){
+		if(eFile_Write(heap[i])){			
+			ST7735_Message(0, 1, "write error at ", i);
+			return 1;
+		}
+	}
+	ST7735_Message(0, 1, "heap test success", 2);
+	return 0;
 }
 
 //*******************Trampoline for selecting main to execute**********
 int main(void) { 			// main 
 	PortD_Init();       // profile user threads
-	Testmain2();
+	ST7735_InitR(INITR_REDTAB); // LCD initialization
+	eFile_Init();
+	eFile_Mount();
+	TestmainFile();
 }

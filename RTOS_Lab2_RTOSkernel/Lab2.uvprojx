@@ -440,11 +440,6 @@
               <FilePath>..\inc\WTimer0A.c</FilePath>
             </File>
             <File>
-              <FileName>eDisk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\RTOS_Labs_common\eDisk.c</FilePath>
-            </File>
-            <File>
               <FileName>efile.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\RTOS_Labs_common\efile.c</FilePath>
@@ -483,16 +478,6 @@
               <FileName>FIFOsimple.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\RTOS_Labs_common\FIFOsimple.c</FilePath>
-            </File>
-            <File>
-              <FileName>Timer5A.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\inc\Timer5A.c</FilePath>
-            </File>
-            <File>
-              <FileName>Timer5A.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\inc\Timer5A.h</FilePath>
             </File>
             <File>
               <FileName>TCB.h</FileName>
@@ -548,6 +533,41 @@
               <FileName>Timer4A.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\inc\Timer4A.h</FilePath>
+            </File>
+            <File>
+              <FileName>heap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\RTOS_Labs_common\heap.c</FilePath>
+            </File>
+            <File>
+              <FileName>ff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\RTOS_Labs_common\ff.c</FilePath>
+            </File>
+            <File>
+              <FileName>ff.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RTOS_Labs_common\ff.h</FilePath>
+            </File>
+            <File>
+              <FileName>ffconf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RTOS_Labs_common\ffconf.h</FilePath>
+            </File>
+            <File>
+              <FileName>integer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RTOS_Labs_common\integer.h</FilePath>
+            </File>
+            <File>
+              <FileName>diskio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RTOS_Labs_common\diskio.h</FilePath>
+            </File>
+            <File>
+              <FileName>diskio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\RTOS_Labs_common\diskio.c</FilePath>
             </File>
           </Files>
         </Group>
