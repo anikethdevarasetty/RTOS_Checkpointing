@@ -22,9 +22,6 @@ typedef struct heap_stats {
   uint32_t free;   // number of bytes available to allocate
 } heap_stats_t;
 
-#define HEAPSIZE 2000
-
-static int32_t heap[HEAPSIZE];
 
 /**
  * @details Initialize the Heap

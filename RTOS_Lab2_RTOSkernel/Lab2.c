@@ -72,6 +72,9 @@ extern int32_t MaxJitter;             // largest time jitter between interrupts 
 extern uint32_t const JitterSize;
 extern uint32_t JitterHistogram[];
 
+#define HEAPSIZE 2000
+extern int32_t heap[HEAPSIZE];
+
 #define PD0  (*((volatile uint32_t *)0x40007004))
 #define PD1  (*((volatile uint32_t *)0x40007008))
 #define PD2  (*((volatile uint32_t *)0x40007010))
@@ -634,7 +637,9 @@ int TestmainFile(){
 		return 1;
 	}
 	for(int i = 0; i < 2000; i++){
-		if(eFile_Write(heap[i])){			
+		int32_t data = heap[0];
+		ST7735_Message(1, 1, "heap[i] = ", data);
+		if(eFile_Write(data)){			
 			ST7735_Message(0, 1, "write error at ", i);
 			return 1;
 		}

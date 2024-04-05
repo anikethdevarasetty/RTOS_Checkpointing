@@ -33,6 +33,10 @@
 
 Sema4Type HeapSema; 
 
+#define HEAPSIZE 2000
+
+int32_t heap[HEAPSIZE];
+
 
 //******** Heap_Init *************** 
 // Initialize the Heap
