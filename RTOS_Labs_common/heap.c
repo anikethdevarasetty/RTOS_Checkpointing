@@ -31,10 +31,6 @@
 #include <string.h>
 #include "OS.h"
 
-#define HEAPSIZE 2000
-
-static int32_t heap[HEAPSIZE];
-
 Sema4Type HeapSema; 
 
 

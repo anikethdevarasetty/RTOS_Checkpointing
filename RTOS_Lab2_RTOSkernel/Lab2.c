@@ -38,6 +38,9 @@
 #include "../inc/ADCT0ATrigger.h"
 #include "../inc/IRDistance.h"
 #include "../RTOS_Labs_common/OS.h"
+#include "../RTOS_Labs_common/eFile.h"
+#include "../RTOS_Labs_common/eDisk.h"
+#include "../RTOS_Labs_common/heap.h"
 #include "../RTOS_Labs_common/Interpreter.h"
 #include "../RTOS_Labs_common/ST7735.h"
 
@@ -612,8 +615,44 @@ int Testmain5(void){   // Testmain5
 }
 
 
+int TestmainFile(){
+	PLL_Init(Bus80MHz);
+	Heap_Init();
+	NumCreated = 0 ;
+  NumCreated += OS_AddThread(&Thread2e,128,0); 
+  NumCreated += OS_AddThread(&Thread3e,128,0); 
+  NumCreated += OS_AddThread(&Thread4e,128,0); 
+	
+	ST7735_Message(0, 1, "heap test start", 1);
+	
+	if(eFile_Create("heap.bin")) {
+		ST7735_Message(0, 1, "create error", 1);
+		//return 1;
+	}
+	if (eFile_WOpen("heap.bin")){
+		ST7735_Message(0, 1, "open error", 1);
+		return 1;
+	}
+	for(int i = 0; i < 2000; i++){
+		if(eFile_Write(heap[i])){			
+			ST7735_Message(0, 1, "write error at ", i);
+			return 1;
+		}
+	}
+	if(eFile_WClose()){			
+		ST7735_Message(0, 1, "close error", 3);
+		return 1;
+	}	
+	ST7735_Message(0, 1, "heap test success", 4);
+	return 0;
+}
+
 //*******************Trampoline for selecting main to execute**********
 int main(void) { 			// main 
 	PortD_Init();       // profile user threads
-	Testmain5();
+	ST7735_InitR(INITR_REDTAB); // LCD initialization
+	OS_AddPeriodicThread(&disk_timerproc,TIME_1MS,0);   // time out routines for disk
+	eFile_Init();
+	eFile_Mount();
+	TestmainFile();
 }
