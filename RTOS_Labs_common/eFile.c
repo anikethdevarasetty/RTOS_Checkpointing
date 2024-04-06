@@ -89,10 +89,10 @@ int eFile_WOpen( const char name[]){      // open a file for writing
 // Save at end of the open file
 // Input: data to be saved
 // Output: 0 if successful and 1 on failure (e.g., trouble writing to flash)
-int eFile_Write(int32_t data){
+int eFile_Write(char data){
   unsigned written;
   OS_bWait(&LCDFree);
-  if(f_write(&f, &data, 4, &written) || (written != 1)){
+  if(f_write(&f, &data, 1, &written) || (written != 1)){
     OS_bSignal(&LCDFree);
     return 1;
   }

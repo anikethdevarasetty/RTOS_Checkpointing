@@ -102,7 +102,7 @@ int eFile_WOpen(const char name[]);      // open a file for writing
  * @return 0 if successful and 1 on failure (e.g., trouble writing to flash)
  * @brief  Format the disk
  */
-int eFile_Write(int32_t data);  
+int eFile_Write(char data);  
 
 /**
  * @details Close the file, leave disk in a state power can be removed.

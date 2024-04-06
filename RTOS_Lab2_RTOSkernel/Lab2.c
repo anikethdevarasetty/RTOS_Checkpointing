@@ -637,18 +637,65 @@ int TestmainFile(){
 		return 1;
 	}
 	for(int i = 0; i < 2000; i++){
-		int32_t data = heap[0];
-		ST7735_Message(1, 1, "heap[i] = ", data);
-		if(eFile_Write(data)){			
-			ST7735_Message(0, 1, "write error at ", i);
-			return 1;
-		}
+    int32_t data = heap[i];
+    //write byte by byte
+    if(eFile_Write(data & 0xFF)){ //low byte		
+    // error in writing	
+      ST7735_Message(0, 1, "write error at ", i);
+      return 1;
+    }
+    if(eFile_Write((data >> 8) & 0xFF)){ //second byte
+    // error in writing	
+      ST7735_Message(0, 1, "write error at ", i);
+      return 1;
+    }
+    if(eFile_Write((data >> 16) & 0xFF)){	//third byte
+    // error in writing	
+      ST7735_Message(0, 1, "write error at ", i);
+      return 1;
+    }
+    if(eFile_Write((data >> 24) & 0xFF)){	//high byte
+    // error in writing	
+      ST7735_Message(0, 1, "write error at ", i);
+      return 1;
+    }
 	}
 	if(eFile_WClose()){			
 		ST7735_Message(0, 1, "close error", 3);
 		return 1;
 	}	
-	ST7735_Message(0, 1, "heap test success", 4);
+	ST7735_Message(0, 1, "write success", 4);
+	
+	if(eFile_ROpen("heap.bin")){
+		ST7735_Message(0, 1, "read open error", 5);
+	}
+	
+	for(int i = 0; i < 2000; i++){
+		//read 2000 words from the file byte by byte
+    int32_t data = 0;
+    for(int j = 0; j < 4; j++){
+      char byte;
+      if(eFile_ReadNext(&byte)){
+        ST7735_Message(0, 1, "read error at ", i);
+				eFile_RClose();
+        return 1;
+      }
+      data |= byte << (j * 8);
+    }
+    if(data != heap[i]){
+      ST7735_Message(0, 1, "data mismatch at ", i);
+      if(eFile_RClose()){
+        ST7735_Message(0, 1, "read close error", 5);
+        return 1;
+      }
+      return 1;
+    }
+	}
+  if(eFile_RClose()){
+    ST7735_Message(0, 1, "read close error", 5);
+    return 1;
+  }
+  ST7735_Message(0, 1, "read success", 6);
 	return 0;
 }
 
