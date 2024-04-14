@@ -16,7 +16,7 @@
         EXPORT  ContextSwitch
         EXPORT  PendSV_Handler
         EXPORT  SVC_Handler
-
+		EXPORT	StartFromCheckpoint
 
 NVIC_INT_CTRL   EQU     0xE000ED04                              ; Interrupt control state register.
 NVIC_SYSPRI14   EQU     0xE000ED22                              ; PendSV priority register (position 14).
@@ -24,6 +24,8 @@ NVIC_SYSPRI15   EQU     0xE000ED23                              ; Systick priori
 NVIC_LEVEL14    EQU           0xCF                              ; Systick priority value (second lowest).
 NVIC_LEVEL15    EQU           0xFF                              ; PendSV priority value (lowest).
 NVIC_PENDSVSET  EQU     0x10000000                              ; Value to trigger PendSV exception.
+LR_INTERUPT_RET  EQU     0xFFFFFFF9                            ; Value to trigger PendSV exception.
+
 
 
 StartOS
@@ -53,7 +55,30 @@ StartOS
 
 OSStartHang
     B       OSStartHang        ; Should never get here
-
+	
+	
+StartFromCheckpoint
+    LDR R0, =NVIC_SYSPRI15; Adjusting Systick priority
+	LDR R1, [R0]
+	MOV R2, #NVIC_LEVEL14
+	ORR R1, R1, R2
+	STR R1, [R0]
+	
+	LDR R0, =NVIC_SYSPRI14; Adjusting PendSV priority
+	LDR R1, [R0]
+	MOV R2, #NVIC_LEVEL15
+	ORR R1, R1, R2
+	STR R1, [R0]
+	
+	LDR R0, =RunPt; R0 = pointer to the pointer of the current TCB block
+    LDR R1, [R0]
+    LDR SP, [R1]
+    POP {R4-R11}
+	
+	MOV LR, #LR_INTERUPT_RET
+	CPSIE I     
+    BX      LR                 ; start first thread
+	
 
 ;********************************************************************************************************
 ;                               PERFORM A CONTEXT SWITCH (From task level)
@@ -107,6 +132,7 @@ ContextSwitch
 ;              therefore safe to assume that context being switched out was using the process stack (PSP).
 ;********************************************************************************************************
 		IMPORT    Heap_Free
+		IMPORT	  Snapshot_Heap
 
 
 PendSV_Handler
@@ -131,6 +157,9 @@ sleeping
 	BL Heap_Free ;reclaim tcb space
 	POP {R0-R3, LR} ;restore runpt address and LR
 switch
+	PUSH {R0-R3, LR} ;save runpt address and LR
+	BL Snapshot_Heap
+	POP {R0-R3, LR} ;restore runpt address and LR
     STR R1, [R0]
     LDR SP, [R1]
     POP {R4-R11}; Pop the registers for this new thread

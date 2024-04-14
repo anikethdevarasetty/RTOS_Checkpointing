@@ -53,6 +53,13 @@ struct fifo{
 };
 typedef struct fifo fifo_t;
 
+int Save_Heap();
+int Save_RunPt();
+int Save_CheckpointFlag(int8_t i);
+
+int Load_Heap();
+int Load_RunPt();
+
 /**
  * @details  Initialize operating system, disable interrupts until OS_Launch.
  * Initialize OS controlled I/O: serial, ADC, systick, LaunchPad I/O and timers.
@@ -296,6 +303,9 @@ uint32_t OS_MsTime(void);
 // In Lab 3, you should implement the user-defined TimeSlice field
 // It is ok to limit the range of theTimeSlice to match the 24-bit SysTick
 void OS_Launch(uint32_t theTimeSlice);
+
+void OS_Checkpoint_Launch(uint32_t theTimeSlice);
+
 
 /**
  * @details open the file for writing, redirect stream I/O (printf) to this file

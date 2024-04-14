@@ -74,6 +74,7 @@ extern uint32_t JitterHistogram[];
 
 #define HEAPSIZE 2000
 extern int32_t heap[HEAPSIZE];
+extern int32_t heapSnapshot[HEAPSIZE];
 
 #define PD0  (*((volatile uint32_t *)0x40007004))
 #define PD1  (*((volatile uint32_t *)0x40007008))
@@ -627,43 +628,7 @@ int TestmainFile(){
   NumCreated += OS_AddThread(&Thread4e,128,0); 
 	
 	ST7735_Message(0, 1, "heap test start", 1);
-	
-	if(eFile_Create("heap.bin")) {
-		ST7735_Message(0, 1, "create error", 1);
-		//return 1;
-	}
-	if (eFile_WOpen("heap.bin")){
-		ST7735_Message(0, 1, "open error", 1);
-		return 1;
-	}
-	for(int i = 0; i < 2000; i++){
-    int32_t data = heap[i];
-    //write byte by byte
-    if(eFile_Write(data & 0xFF)){ //low byte		
-    // error in writing	
-      ST7735_Message(0, 1, "write error at ", i);
-      return 1;
-    }
-    if(eFile_Write((data >> 8) & 0xFF)){ //second byte
-    // error in writing	
-      ST7735_Message(0, 1, "write error at ", i);
-      return 1;
-    }
-    if(eFile_Write((data >> 16) & 0xFF)){	//third byte
-    // error in writing	
-      ST7735_Message(0, 1, "write error at ", i);
-      return 1;
-    }
-    if(eFile_Write((data >> 24) & 0xFF)){	//high byte
-    // error in writing	
-      ST7735_Message(0, 1, "write error at ", i);
-      return 1;
-    }
-	}
-	if(eFile_WClose()){			
-		ST7735_Message(0, 1, "close error", 3);
-		return 1;
-	}	
+	Save_Heap();
 	ST7735_Message(0, 1, "write success", 4);
 	
 	if(eFile_ROpen("heap.bin")){
@@ -682,7 +647,7 @@ int TestmainFile(){
       }
       data |= byte << (j * 8);
     }
-    if(data != heap[i]){
+    if(data != heapSnapshot[i]){
       ST7735_Message(0, 1, "data mismatch at ", i);
       if(eFile_RClose()){
         ST7735_Message(0, 1, "read close error", 5);
@@ -699,6 +664,68 @@ int TestmainFile(){
 	return 0;
 }
 
+
+
+
+
+Sema4Type Snapshot;
+
+void Checkpoint(){
+	OS_InitSemaphore(&Snapshot,1);
+	while(1){
+		OS_Wait(&Snapshot);
+		int heapret = Save_Heap();
+		int runptret = Save_RunPt();
+		Save_CheckpointFlag(heapret&runptret);
+		OS_Signal(&Snapshot);
+		OS_Sleep(1000);
+	}
+}
+
+int create_threads(){
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&Thread1b,128,0); 
+	NumCreated += OS_AddThread(&Thread2b,128,0); 
+	NumCreated += OS_AddThread(&Thread3b,128,0); 
+	NumCreated += OS_AddThread(&Checkpoint,128,0); 
+	return 0;
+}
+
+int TestmainCheckpoint(){
+	PLL_Init(Bus80MHz);
+	Heap_Init();
+	
+	if(eFile_ROpen("control.bin")){
+		//read error load normally
+		create_threads();
+		eFile_RClose();
+		OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+	} 
+	else {
+		char byte;
+		if(eFile_ReadNext(&byte)){
+			ST7735_Message(0, 1, "read error at ", 1);
+			eFile_RClose();
+			return 1;
+		}
+		if(eFile_RClose()){
+			ST7735_Message(0, 1, "read close error", 5);
+			return 1;
+		}
+		int8_t saved = (int8_t) byte;
+		int8_t restore = 0;
+		if(!saved && restore){
+			Load_Heap();
+			Load_RunPt();
+			OS_Launch(TIME_2MS);
+		} 
+		else {
+			create_threads();
+			OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+		}
+	}	return 0;
+}
+
 //*******************Trampoline for selecting main to execute**********
 int main(void) { 			// main 
 	PortD_Init();       // profile user threads
@@ -706,5 +733,5 @@ int main(void) { 			// main
 	OS_AddPeriodicThread(&disk_timerproc,TIME_1MS,0);   // time out routines for disk
 	eFile_Init();
 	eFile_Mount();
-	TestmainFile();
+	TestmainCheckpoint();
 }

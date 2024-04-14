@@ -38,6 +38,16 @@ uint32_t JitterHistogram[JITTERSIZE]={0,};
 
 extern int StartOS(void);
 extern int ContextSwitch(void);
+extern int StartFromCheckpoint(void);
+
+extern Sema4Type Snapshot;
+
+#define HEAPSIZE 2000
+
+extern int32_t heap[HEAPSIZE];
+
+int32_t heapSnapshot[HEAPSIZE];
+TCB_t *SavedRunPt;
 
 
 // Initialize Variables
@@ -126,6 +136,248 @@ void OS_InitSemaphore(Sema4Type *semaPt, int32_t value){
 	EndCritical(status);
 }; 
 
+// ******** Save_Heap ***********
+int Save_Heap(){
+	if(eFile_Create("heap.bin")) {
+		//return 1;
+	}
+	if (eFile_WOpen("heap.bin")){
+		return 1;
+	}
+	for(int i = 0; i < 2000; i++){
+    int32_t data = heapSnapshot[i];
+    //write byte by byte
+    if(eFile_Write(data & 0xFF)){ //low byte		
+    // error in writing	
+      return 1;
+    }
+    if(eFile_Write((data >> 8) & 0xFF)){ //second byte
+    // error in writing	
+      return 1;
+    }
+    if(eFile_Write((data >> 16) & 0xFF)){	//third byte
+    // error in writing	
+      return 1;
+    }
+    if(eFile_Write((data >> 24) & 0xFF)){	//high byte
+    // error in writing	
+      return 1;
+    }
+	}
+	if(eFile_WClose()){			
+		ST7735_Message(0, 1, "close error", 3);
+		return 1;
+	}	
+	
+	ST7735_Message(1,1, "heap success", 3);
+
+	return 0;
+}
+
+// ******** Load_Heap ************
+int Load_Heap(){
+	if(eFile_ROpen("heap.bin")){
+		return 1;
+	}
+	
+	for(int i = 0; i < 2000; i++){
+		//read 2000 words from the file byte by byte
+    int32_t data = 0;
+    for(int j = 0; j < 4; j++){
+      char byte;
+      if(eFile_ReadNext(&byte)){
+				eFile_RClose();
+        return 1;
+      }
+      data |= byte << (j * 8);
+    }
+    heap[i] = data;
+	}
+	
+  if(eFile_RClose()){
+    return 1;
+  }
+	
+	return 0;
+}
+
+// ******** Save_RunPt ***********
+int Save_RunPt(){
+	if(eFile_Create("runpt.bin")){
+		//something
+	}
+	
+	if(eFile_WOpen("runpt.bin")){
+		return 1;
+	}
+	
+	//runpt
+	int32_t data = (int32_t) SavedRunPt;
+    //write byte by byte
+	if(eFile_Write(data & 0xFF)){ //low byte		
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 8) & 0xFF)){ //second byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 16) & 0xFF)){	//third byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 24) & 0xFF)){	//high byte
+	// error in writing	
+		return 1;
+	}
+	
+	//head
+	data = (int32_t) head;
+    //write byte by byte
+	if(eFile_Write(data & 0xFF)){ //low byte		
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 8) & 0xFF)){ //second byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 16) & 0xFF)){	//third byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 24) & 0xFF)){	//high byte
+	// error in writing	
+		return 1;
+	}
+	
+	//tail
+	data = (int32_t) tail;
+    //write byte by byte
+	if(eFile_Write(data & 0xFF)){ //low byte		
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 8) & 0xFF)){ //second byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 16) & 0xFF)){	//third byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 24) & 0xFF)){	//high byte
+	// error in writing	
+		return 1;
+	}
+	
+	if(eFile_WClose()){			
+		ST7735_Message(0, 1, "close error", 3);
+		return 1;
+	}
+	ST7735_Message(1, 2, "runpt success", 3);
+	return 0;
+}
+
+// ******** Save_CheckpointFlag ***********
+int Save_CheckpointFlag(int8_t i){
+	if(eFile_Create("control.bin")){
+		//something
+	}
+	
+	if(eFile_WOpen("control.bin")){
+		ST7735_Message(0, 2, "control fail", 3);
+		return 1;
+	}
+	
+	int8_t data = i;
+    //write byte by byte
+	if(eFile_Write(data)){ //low byte		
+	// error in writing	
+		return 1;
+	}
+	
+	if(eFile_WClose()){			
+		ST7735_Message(0, 1, "close error", 3);
+		return 1;
+	}
+	ST7735_Message(1, 3, "control success", 3);
+	return 0;
+}
+
+//************** Load_Runpt ******************
+int Load_RunPt(){
+	if(eFile_ROpen("runpt.bin")){
+		return 1;
+	}
+	
+	//runpt
+	int32_t data = 0;
+	for(int j = 0; j < 4; j++){
+		char byte;
+		if(eFile_ReadNext(&byte)){
+			eFile_RClose();
+			return 1;
+		}
+		data |= byte << (j * 8);
+	}
+	RunPt = (TCB_t*) data;
+	
+	//head
+	data = 0;
+	for(int j = 0; j < 4; j++){
+		char byte;
+		if(eFile_ReadNext(&byte)){
+			eFile_RClose();
+			return 1;
+		}
+		data |= byte << (j * 8);
+	}
+	head = (TCB_t*) data;
+	RunPt = head;
+	
+	//tail
+	data = 0;
+	for(int j = 0; j < 4; j++){
+		char byte;
+		if(eFile_ReadNext(&byte)){
+			eFile_RClose();
+			return 1;
+		}
+		data |= byte << (j * 8);
+	}
+	tail = (TCB_t*) data;
+	
+  if(eFile_RClose()){
+    return 1;
+  }
+	
+	return 0;
+}
+
+
+// ******** Snapshot_Heap ***********
+int Snapshot_Heap(){
+	if(Snapshot.Value <= 0){
+		return 1;
+	}
+	Snapshot.Value -= 1;
+	for(int i = 0; i < 2000; i++){
+		heapSnapshot[i] = heap[i];
+	}
+	SavedRunPt = RunPt;
+	OS_Signal(&Snapshot);
+	return 0;
+}
+
+
+void OS_Checkpoint_Launch(uint32_t theTimeSlice){
+	SysTick_Init(theTimeSlice);
+	//Timer4A_Init(&time_up_us, 80000000/1000000, 4); //1 us timer
+	OS_ClearMsTime();
+  StartFromCheckpoint(); // start on the first task
+}
+	
 // ******** OS_Wait ************
 // decrement semaphore 
 // Lab2 spinlock
