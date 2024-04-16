@@ -696,7 +696,7 @@ int TestmainCheckpoint(){
 			return 1;
 		}
 		int8_t saved = (int8_t) byte;
-		int8_t restore = 0;
+		int8_t restore = 1;
 		if(!saved && restore){
 			Load_Heap();
 			Load_RunPt();

@@ -163,10 +163,6 @@ int Save_Heap(){
     // error in writing	
       return 1;
     }
-		
-//		if(data < 0){
-//			i += -1*data + 2;
-//		}
 	}
 	if(eFile_WClose()){			
 		ST7735_Message(0, 1, "close error", 3);
@@ -198,21 +194,6 @@ int Load_Heap(){
       data |= byte << (j * 8);
     }
 		heap[i] = data;
-		
-//		if(i == 0){
-//			starti = 0;
-//			size = heap[i] < 0 ? -heap[i] : heap[i];
-//		}
-//		
-//		if(i == starti+size+2){ //new block
-//			starti = i;
-//			size = heap[i] < 0 ? -heap[i] : heap[i];
-//			if(data < 0){
-//				i += -1*data+1;
-//				heap[i] = data;
-//				i++;
-//			}
-//		}
 	}
 	
   if(eFile_RClose()){
