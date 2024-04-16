@@ -631,36 +631,19 @@ int TestmainFile(){
 	Save_Heap();
 	ST7735_Message(0, 1, "write success", 4);
 	
-	if(eFile_ROpen("heap.bin")){
-		ST7735_Message(0, 1, "read open error", 5);
-	}
+	Load_Heap();
 	
 	for(int i = 0; i < 2000; i++){
 		//read 2000 words from the file byte by byte
-    int32_t data = 0;
-    for(int j = 0; j < 4; j++){
-      char byte;
-      if(eFile_ReadNext(&byte)){
-        ST7735_Message(0, 1, "read error at ", i);
-				eFile_RClose();
-        return 1;
-      }
-      data |= byte << (j * 8);
-    }
-    if(data != heapSnapshot[i]){
-      ST7735_Message(0, 1, "data mismatch at ", i);
-      if(eFile_RClose()){
-        ST7735_Message(0, 1, "read close error", 5);
-        return 1;
-      }
-      return 1;
-    }
+    if(heapSnapshot[i] != heap[i]){
+			ST7735_Message(0, 1, "read fail", 4);
+			return 1;
+		}
+		if(heapSnapshot[i] < 0){
+			i += -heapSnapshot[i] + 1;
+		}
 	}
-  if(eFile_RClose()){
-    ST7735_Message(0, 1, "read close error", 5);
-    return 1;
-  }
-  ST7735_Message(0, 1, "read success", 6);
+	ST7735_Message(0, 3, "read success", 4);
 	return 0;
 }
 
