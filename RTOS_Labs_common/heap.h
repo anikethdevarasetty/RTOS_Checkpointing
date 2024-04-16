@@ -22,6 +22,7 @@ typedef struct heap_stats {
   uint32_t free;   // number of bytes available to allocate
 } heap_stats_t;
 
+int32_t blockSpace(int32_t* block);
 
 /**
  * @details Initialize the Heap

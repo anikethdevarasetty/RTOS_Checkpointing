@@ -46,7 +46,7 @@ extern Sema4Type Snapshot;
 
 extern int32_t heap[HEAPSIZE];
 
-int32_t heapSnapshot[HEAPSIZE];
+extern int32_t heapSnapshot[HEAPSIZE];
 TCB_t *SavedRunPt;
 
 
@@ -144,30 +144,37 @@ int Save_Heap(){
 	if (eFile_WOpen("heap.bin")){
 		return 1;
 	}
-	for(int i = 0; i < 2000; i++){
-    int32_t data = heapSnapshot[i];
-    //write byte by byte
-    if(eFile_Write(data & 0xFF)){ //low byte		
-    // error in writing	
-      return 1;
-    }
-    if(eFile_Write((data >> 8) & 0xFF)){ //second byte
-    // error in writing	
-      return 1;
-    }
-    if(eFile_Write((data >> 16) & 0xFF)){	//third byte
-    // error in writing	
-      return 1;
-    }
-    if(eFile_Write((data >> 24) & 0xFF)){	//high byte
-    // error in writing	
-      return 1;
-    }
-		
-//		if(data < 0){
-//			i += -1*data + 2;
-//		}
+
+	int index = 0;
+	while(index < HEAPSIZE){
+		int32_t size = blockSpace(&heapSnapshot[index]); //get size of next block
+
+		if(heapSnapshot[index] < 0){ //if empty block
+			int32_t data = heapSnapshot[index];
+			for(int j = 0; j < 4; j++){
+				char byte = (data >> (j * 8)) & 0xFF;
+				if(eFile_Write(byte)){
+					// error in writing
+					return 1;
+				}
+			}
+			index += size+2; //jump to next block - size + 2 to account for header&footer
+		} 
+		else {
+			for(int i = 0; i <= size+1; i++){
+				int32_t data = heapSnapshot[index+i];
+				for(int j = 0; j < 4; j++){
+					char byte = (data >> (j * 8)) & 0xFF;
+					if(eFile_Write(byte)){
+						// error in writing
+						return 1;
+					}
+				}
+			}
+			index += size+2; //jump to next block - size + 2 to account for header&footer
+		}
 	}
+	
 	if(eFile_WClose()){			
 		ST7735_Message(0, 1, "close error", 3);
 		return 1;
@@ -184,35 +191,40 @@ int Load_Heap(){
 		return 1;
 	}
 	
-	int starti;
-	int32_t size;
-	for(int i = 0; i < 2000; i++){
-		//read 2000 words from the file byte by byte
-    int32_t data = 0;
-    for(int j = 0; j < 4; j++){
-      char byte;
-      if(eFile_ReadNext(&byte)){
+	int index = 0;
+	while(index < HEAPSIZE){
+		int32_t data = 0;
+		for(int j = 0; j < 4; j++){
+			char byte;
+			if(eFile_ReadNext(&byte)){
 				eFile_RClose();
-        return 1;
-      }
-      data |= byte << (j * 8);
-    }
-		heap[i] = data;
-		
-//		if(i == 0){
-//			starti = 0;
-//			size = heap[i] < 0 ? -heap[i] : heap[i];
-//		}
-//		
-//		if(i == starti+size+2){ //new block
-//			starti = i;
-//			size = heap[i] < 0 ? -heap[i] : heap[i];
-//			if(data < 0){
-//				i += -1*data+1;
-//				heap[i] = data;
-//				i++;
-//			}
-//		}
+				return 1;
+			}
+			data |= byte << (j * 8);
+		}
+		heap[index] = data;
+
+		int32_t size = blockSpace(&heap[index]); //get size of next block
+		if(heap[index] < 0){ //if empty block
+			index += size+1; //jump to next block - size + 2 to account for header&footer
+			heap[index] = data;
+			index++;
+			continue;
+		}
+
+		for(int i = 1; i <= size+1; i++){
+			data = 0;
+			for(int j = 0; j < 4; j++){
+				char byte;
+				if(eFile_ReadNext(&byte)){
+					eFile_RClose();
+					return 1;
+				}
+				data |= byte << (j * 8);
+			}
+			heap[index+i] = data;
+		}
+		index += size+2; //jump to next block - size + 2 to account for header&footer
 	}
 	
   if(eFile_RClose()){

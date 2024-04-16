@@ -36,6 +36,7 @@ Sema4Type HeapSema;
 #define HEAPSIZE 2000
 
 int32_t heap[HEAPSIZE];
+int32_t heapSnapshot[HEAPSIZE];
 
 
 //******** Heap_Init *************** 
@@ -47,6 +48,7 @@ int32_t heap[HEAPSIZE];
 int32_t Heap_Init(void){
 	OS_InitSemaphore(&HeapSema, 1);
 	for(int i = 0; i < 2000; i++){
+		heapSnapshot[i] = 0;
 		heap[i] = 0;
 	}
 	*(heap) = -1*(int32_t)(HEAPSIZE-2);

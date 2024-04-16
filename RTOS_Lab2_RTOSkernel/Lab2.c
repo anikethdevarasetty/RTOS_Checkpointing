@@ -627,11 +627,20 @@ int TestmainFile(){
   NumCreated += OS_AddThread(&Thread3e,128,0); 
   NumCreated += OS_AddThread(&Thread4e,128,0); 
 	
-	ST7735_Message(0, 1, "heap test start", 1);
-	Save_Heap();
-	ST7735_Message(0, 1, "write success", 4);
+	for(int i = 0; i < HEAPSIZE; i++){
+		heapSnapshot[i] = heap[i];
+	}
 	
-	Load_Heap();
+	ST7735_Message(0, 1, "heap test start", 1);
+	int status = Save_Heap();
+	if(!status){
+		ST7735_Message(0, 1, "write success", 4);
+	}
+	
+	status = Load_Heap();
+	if(!status){
+		ST7735_Message(0, 3, "read success", 4);
+	}
 	
 	for(int i = 0; i < 2000; i++){
 		//read 2000 words from the file byte by byte
@@ -639,11 +648,9 @@ int TestmainFile(){
 			ST7735_Message(0, 1, "read fail", 4);
 			return 1;
 		}
-		if(heapSnapshot[i] < 0){
-			i += -heapSnapshot[i] + 1;
-		}
 	}
-	ST7735_Message(0, 3, "read success", 4);
+	
+	ST7735_Message(0, 4, "compare success", 4);
 	return 0;
 }
 
@@ -716,5 +723,5 @@ int main(void) { 			// main
 	OS_AddPeriodicThread(&disk_timerproc,TIME_1MS,0);   // time out routines for disk
 	eFile_Init();
 	eFile_Mount();
-	TestmainCheckpoint();
+	TestmainFile();
 }
