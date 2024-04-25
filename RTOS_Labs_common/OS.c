@@ -136,6 +136,12 @@ void OS_InitSemaphore(Sema4Type *semaPt, int32_t value){
 	EndCritical(status);
 }; 
 
+void logToSDCard(char *message) {
+	if (eFile_Create("
+	
+}
+
+
 // ******** Save_Heap ***********
 int Save_Heap(){
 	if(eFile_Create("heap.bin")) {

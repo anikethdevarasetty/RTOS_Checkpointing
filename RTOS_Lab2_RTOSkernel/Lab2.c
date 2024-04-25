@@ -709,6 +709,8 @@ int TestmainCheckpoint(){
 	}	return 0;
 }
 
+
+
 //*******************Trampoline for selecting main to execute**********
 int main(void) { 			// main 
 	PortD_Init();       // profile user threads
@@ -716,5 +718,8 @@ int main(void) { 			// main
 	OS_AddPeriodicThread(&disk_timerproc,TIME_1MS,0);   // time out routines for disk
 	eFile_Init();
 	eFile_Mount();
-	TestmainCheckpoint();
+	//TestmainCheckpoint();
+	
+	ST7735_Message(0, 0, "hello", 0);
+	
 }
