@@ -113,6 +113,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "../inc/tm4c123gh6pm.h"
 #include "../RTOS_Labs_common/ST7735.h"
 #include "../RTOS_Labs_common/OS.h"
@@ -1406,6 +1407,7 @@ void ST7735_OutUDec2(uint32_t n, uint32_t l){
 //        value   signed integer to be printed
 void ST7735_Message(uint32_t  d, uint32_t  l, char *pt, int32_t value){
 	OS_bWait(&LCDFree);
+	
   if ((l < 0) || (l > 7)){
 		OS_bSignal(&LCDFree);
 		return; //Invalid input; invalid device protected via if statements
@@ -1441,6 +1443,23 @@ void ST7735_Message(uint32_t  d, uint32_t  l, char *pt, int32_t value){
     ST7735_OutUDec(value);
   }
 	OS_bSignal(&LCDFree);
+	
+	// save to a new variable
+	if (d == 0 && l == 0){
+		char t0[64];
+		if (pt != NULL) { // text to print
+			strcpy(t0, pt); // copy pt to t0
+			if (value != 1234567){ // check against magic number
+				size_t offset = strlen(t0); // check offset
+				sprintf(t0 + offset, "%d", value);
+			}
+			// updated character array is now in t0
+		}
+		else { // no text to print
+			sprintf(t0, "%d", value); // just add value to t0
+		}
+		logToSDCard(t0); // write this to the SD card
+	}
 }
 
 //-----------------------ST7735_OutUDec4-----------------------

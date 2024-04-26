@@ -138,25 +138,25 @@ void OS_InitSemaphore(Sema4Type *semaPt, int32_t value){
 
 void logToSDCard(char *message) {
 	if (eFile_Create("test.txt")){
-		ST7735_Message(0, 0, "file creation error", 3);
+		ST7735_Message(0, 1, "file creation error", 3);
 	}
 	if (eFile_WOpen("test.txt")){
-		ST7735_Message(0, 1, "file creation error", 3);
+		ST7735_Message(0, 2, "file creation error", 3);
 	}
 	
 	for (int i = 0; i < 64; i++){
 		if (message[i] == 0) {
-			ST7735_Message(0, 7, "break wr", i);
+			ST7735_Message(0, 3, "break wr", i);
 			break;
 		}
 		eFile_Write(message[i]);
 	}
 	
 	if (eFile_WClose()){
-		ST7735_Message(0, 2, "write close error", 3);
+		ST7735_Message(0, 4, "write close error", 3);
 	}
 	
-	ST7735_Message(0,3, "write to file success", 3);
+	ST7735_Message(0,5, "write to file success", 3);
 }
 
 // ******** Save_Heap ***********

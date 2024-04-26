@@ -722,11 +722,11 @@ int main(void) { 			// main
 	eFile_Mount();
 	//TestmainCheckpoint();
 	
-	//ST7735_Message(1, 0, "hello", 0);
-	char buff[64]; 
-	//char* token = "testhello";
-	strcpy(buff, "this is a test\n and another one");
-	logToSDCard(buff);
+	//char buff[64]; 
+	//strcpy(buff, "this is a test\n and another one");
+	//logToSDCard(buff);
+	
+	ST7735_Message(0, 0, "hello", 1234567);
 	
 	
 }
