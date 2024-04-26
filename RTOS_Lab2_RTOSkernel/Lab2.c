@@ -720,6 +720,6 @@ int main(void) { 			// main
 	eFile_Mount();
 	//TestmainCheckpoint();
 	
-	ST7735_Message(0, 0, "hello", 0);
+	ST7735_Message(1, 0, "hello", 0);
 	
 }

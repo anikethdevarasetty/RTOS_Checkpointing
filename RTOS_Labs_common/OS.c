@@ -137,7 +137,13 @@ void OS_InitSemaphore(Sema4Type *semaPt, int32_t value){
 }; 
 
 void logToSDCard(char *message) {
-	if (eFile_Create("
+	if (eFile_Create("test.txt")){
+		ST7735_Message(0, 0, "file creation error", 0);
+	}
+	if (eFile_WOpen("test.txt")){
+		ST7735_Message(0, 1, "file creation error", 0);
+	}
+	
 	
 }
 
