@@ -11,6 +11,7 @@
         PRESERVE8
 
         EXTERN  RunPt            ; currently running thread
+		EXTERN sdload
 
         EXPORT  StartOS
         EXPORT  ContextSwitch
@@ -70,12 +71,9 @@ StartFromCheckpoint
 	ORR R1, R1, R2
 	STR R1, [R0]
 	
-	LDR R0, =RunPt; R0 = pointer to the pointer of the current TCB block
-    LDR R1, [R0]
-    LDR SP, [R1]
-    POP {R4-R11}
-	
-	MOV LR, #LR_INTERUPT_RET
+	PUSH {LR}
+	BL ContextSwitch
+	POP {LR}
 	CPSIE I     
     BX      LR                 ; start first thread
 	
@@ -137,6 +135,23 @@ ContextSwitch
 
 PendSV_Handler
     CPSID I
+	LDR R0, =sdload
+	LDR R1, [R0]
+	CMP R1, #1
+	BNE contextswitch
+	MOV R1, #0
+	STR R1, [R0]
+	LDR R0, =RunPt; R0 = pointer to the pointer of the current TCB block
+    LDR R1, [R0]
+    LDR SP, [R1]
+    POP {R4-R11}
+    ;POP {R0-R3}; Not in an interrupt context so have to do this and next line manually
+    ;POP {R12}
+    ;ADD SP, SP, #4; Dont want R14 so add 4 to get to where the PC is stored
+    ;POP {LR}; Pop the PC to into the LR for the later branch
+    ;ADD SP, SP, #4; Dont need thumb bit so just add 4 to get to the top
+	B leave
+contextswitch
     PUSH {R4-R11}; These are the registers not automatically saved on interrupt
     LDR R0, =RunPt; R0 = pointer to the pointer of the current TCB block
     LDR R1, [R0]
@@ -163,6 +178,7 @@ switch
     STR R1, [R0]
     LDR SP, [R1]
     POP {R4-R11}; Pop the registers for this new thread
+leave
     CPSIE I    
     BX      LR                 ; Exception return will restore remaining context   
     

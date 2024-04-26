@@ -54,6 +54,7 @@ TCB_t *SavedRunPt;
 #define MAXTHREADS  10        // maximum number of threads
 
 void(*SW1Task)(void);
+void(*SW2Task)(void);
 
 uint8_t num_threads = 0;
 TCB_t *RunPt = NULL;
@@ -336,6 +337,7 @@ int Load_RunPt(){
 		data |= byte << (j * 8);
 	}
 	head = (TCB_t*) data;
+	RunPt = head;
 	
 	//tail
 	data = 0;
@@ -589,16 +591,15 @@ int OS_AddPeriodicThread(void(*task)(void),
   PF1 Interrupt Handler
  *----------------------------------------------------------------------------*/
 void GPIOPortF_Handler(void){
-  if (GPIO_PORTF_RIS_R & 0x10) { //if trigger flag set SW1/PF4
-    SW1Task();
-    GPIO_PORTF_ICR_R = 0x10; // clear trigger flag
-    GPIO_PORTF_IM_R |= 0x10; // rearm interrupt
-  }
-//  if (GPIO_PORTF_RIS_R & 0x01) { //if trigger flag set SW2/PF0
-//    SW2Task();
-//    GPIO_PORTF_ICR_R = 0x01; // clear trigger flag
-//    GPIO_PORTF_IM_R |= 0x01; // rearm interrupt
-//  }
+	if ((GPIO_PORTF_RIS_R & 0x01)) {
+		GPIO_PORTF_ICR_R |= 0x01;			// acknowledge flag
+		(*SW2Task)();
+	}
+	
+	else if ((GPIO_PORTF_RIS_R & 0x10)) {
+		GPIO_PORTF_ICR_R |= 0x10;			// acknowledge flag
+		(*SW1Task)();
+	}
 }
 
 //******** OS_AddSW1Task *************** 
@@ -615,8 +616,7 @@ void GPIOPortF_Handler(void){
 // In lab 3, there will be up to four background threads, and this priority field 
 //           determines the relative priority of these four threads
 int OS_AddSW1Task(void(*task)(void), uint32_t priority){
-  // put Lab 2 (and beyond) solution here
-	uint8_t priByte = (uint8_t) (priority & 0xFF);
+  uint8_t priByte = (uint8_t) (priority & 0xFF);
 	uint32_t priReg = priByte << 5;
 	
 	SYSCTL_RCGCGPIO_R     |= 0x00000020;      // activate clock for Port F
@@ -626,23 +626,24 @@ int OS_AddSW1Task(void(*task)(void), uint32_t priority){
   GPIO_PORTF_LOCK_R     = 0x4C4F434B;       // unlock GPIO Port F
   GPIO_PORTF_CR_R       = 0x1F;             // allow changes to PF4-0
   
+	//***Potentially dangerous
 	GPIO_PORTF_AMSEL_R    = 0x00;             // disable analog on PF
   GPIO_PORTF_PCTL_R 		&= ~0x000FFFFF; // configure PF4 as GPIO
-  GPIO_PORTF_DIR_R 			&= ~0x11;    // (c) make PF4,0 in (built-in button)
 	GPIO_PORTF_AFSEL_R 		&= ~0x1F;  //     disable alt funct on PF4,0
-  //GPIO_PORTF_PDR_R      = 0x11;             // enable pull-up on PF0 and PF4
-  GPIO_PORTF_PUR_R |= 0x11;     //     enable weak pull-up on PF4
-	GPIO_PORTF_DEN_R      = 0x1F;             // enable digital I/O on PF4-0
+  
+	GPIO_PORTF_DIR_R 			&= ~0x10;    // make PF4 in (built-in button)
+  GPIO_PORTF_PUR_R |= 0x10;     //     enable weak pull-up on PF4
+	GPIO_PORTF_DEN_R      |= 0x10;             // enable digital I/O on PF4
 		
-	GPIO_PORTF_IS_R    	 	&= ~0x11; 						// PF4, PF0 is edge-sensitive
-  GPIO_PORTF_IBE_R   	 	&= ~0x11; 						// PF4, PF0 is not both edges
-  GPIO_PORTF_IEV_R   	 	&= ~0x11; 						// PF4, PF0 falling edge event (Neg logic)
-  GPIO_PORTF_ICR_R   	  = 0x11;  						// clear flag
-  GPIO_PORTF_IM_R    	 	|= 0x11;  						// arm interrupt on PF4-0
+	GPIO_PORTF_IS_R    	 	&= ~0x10; 						// PF4 edge-sensitive
+  GPIO_PORTF_IBE_R   	 	&= ~0x10; 						// PF4 is not both edges
+  GPIO_PORTF_IEV_R   	 	&= ~0x10; 						// PF4 falling edge event (Neg logic)
+  GPIO_PORTF_ICR_R   	  |= 0x10;  						// clear flag
+  GPIO_PORTF_IM_R    	 	|= 0x10;  						// arm interrupt on PF4
 		
   NVIC_PRI7_R = (NVIC_PRI7_R&0xFF00FFFF)|priReg; // GPIOF priority 5
   NVIC_EN0_R  = 0x40000000;													 // enable interrupt 4 in NVIC
-  return 1; // replace this line with solution
+  return 0; // replace this line with solution
 };
 
 //******** OS_AddSW2Task *************** 
@@ -660,7 +661,33 @@ int OS_AddSW1Task(void(*task)(void), uint32_t priority){
 //           determines the relative priority of these four threads
 int OS_AddSW2Task(void(*task)(void), uint32_t priority){
   // put Lab 2 (and beyond) solution here
+  uint8_t priByte = (uint8_t) (priority & 0xFF);
+	uint32_t priReg = priByte << 5;
+	
+	SYSCTL_RCGCGPIO_R     |= 0x00000020;      // activate clock for Port F
+  while((SYSCTL_PRGPIO_R & 0x20)==0){};     // allow time for clock to stabilize
+	SW2Task = task;
     
+  GPIO_PORTF_LOCK_R     = 0x4C4F434B;       // unlock GPIO Port F
+  GPIO_PORTF_CR_R       = 0x1F;             // allow changes to PF4-0
+  
+	//***Potentially dangerous
+	GPIO_PORTF_AMSEL_R    = 0x00;             // disable analog on PF
+  GPIO_PORTF_PCTL_R 		&= ~0x000FFFFF; // configure PF4 as GPIO
+	GPIO_PORTF_AFSEL_R 		&= ~0x1F;  //     disable alt funct on PF4,0
+  
+	GPIO_PORTF_DIR_R 			&= ~0x01;    // (c) make PF0 in (built-in button)
+  GPIO_PORTF_PUR_R |= 0x01;     //     enable weak pull-up on PF0
+	GPIO_PORTF_DEN_R      |= 0x01;             // enable digital I/O on PF0
+		
+	GPIO_PORTF_IS_R    	 	&= ~0x01; 						// PF0 is edge-sensitive
+  GPIO_PORTF_IBE_R   	 	&= ~0x01; 						// PF0 is not both edges
+  GPIO_PORTF_IEV_R   	 	&= ~0x01; 						// PF0 falling edge event (Neg logic)
+  GPIO_PORTF_ICR_R   	  |= 0x01;  						// clear flag
+  GPIO_PORTF_IM_R    	 	|= 0x01;  						// arm interrupt on PF0
+		
+  NVIC_PRI7_R = (NVIC_PRI7_R&0xFF00FFFF)|priReg; // GPIOF priority 5
+  NVIC_EN0_R  = 0x40000000;													 // enable interrupt 4 in NVIC  
   return 0; // replace this line with solution
 };
 

@@ -400,11 +400,6 @@
               <FilePath>..\RTOS_Labs_common\OS.c</FilePath>
             </File>
             <File>
-              <FileName>Interpreter.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\RTOS_Labs_common\Interpreter.c</FilePath>
-            </File>
-            <File>
               <FileName>LaunchPad.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\inc\LaunchPad.c</FilePath>
@@ -453,11 +448,6 @@
               <FileName>cr4_fft_64_stm32.s</FileName>
               <FileType>2</FileType>
               <FilePath>..\inc\cr4_fft_64_stm32.s</FilePath>
-            </File>
-            <File>
-              <FileName>PID_stm32.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>..\inc\PID_stm32.s</FilePath>
             </File>
             <File>
               <FileName>osasm.s</FileName>
