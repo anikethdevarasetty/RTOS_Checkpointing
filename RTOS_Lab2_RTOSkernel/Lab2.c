@@ -28,6 +28,8 @@
 // PE2 Ain1 sampled at 250Hz, sequencer 0, by Producer, timer tigger
 
 #include <stdint.h>
+#include <string.h>
+
 #include "../inc/tm4c123gh6pm.h"
 #include "../inc/CortexM.h"
 #include "../inc/LaunchPad.h"
@@ -720,6 +722,11 @@ int main(void) { 			// main
 	eFile_Mount();
 	//TestmainCheckpoint();
 	
-	ST7735_Message(1, 0, "hello", 0);
+	//ST7735_Message(1, 0, "hello", 0);
+	char buff[64]; 
+	//char* token = "testhello";
+	strcpy(buff, "this is a test\n and another one");
+	logToSDCard(buff);
+	
 	
 }
