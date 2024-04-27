@@ -27,8 +27,10 @@
 // PE3 Ain0 sampled at 2kHz, sequencer 3, by DAS, using software start in ISR
 // PE2 Ain1 sampled at 250Hz, sequencer 0, by Producer, timer tigger
 
+
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "../inc/tm4c123gh6pm.h"
 #include "../inc/CortexM.h"
@@ -401,6 +403,7 @@ int Testmain1(void){  // Testmain1
   return 0;            // this never executes
 }
 
+
 //*******************Second TEST**********
 // Once the initalize test runs, test this (Lab 2 part 1)
 // no UART interrupts
@@ -650,9 +653,6 @@ int TestmainFile(){
 }
 
 
-
-
-
 Sema4Type Snapshot;
 
 void Checkpoint(){
@@ -674,6 +674,73 @@ int create_threads(){
 	NumCreated += OS_AddThread(&Thread3b,128,0); 
 	NumCreated += OS_AddThread(&Checkpoint,128,0); 
 	return 0;
+}
+
+int saveForLCD(uint32_t value, char *filename){
+	
+	if (eFile_Create(filename)){
+	}
+	
+	if (eFile_WOpen(filename)){
+		return 1; // write open error
+	}
+	
+	char temp[20];
+	sprintf(temp, "%d", value);
+	for (int i = 0; i < 20; i++){
+		if (temp[i] == 0) {
+			break;
+		}
+		eFile_Write(temp[i]);
+	}
+	
+	if (eFile_WClose()){
+		return 1; // write close error
+	}
+	return 0;
+}
+
+void outputCounts(void){
+	//long tmp = StartCritical();
+	//output counts to LCD display
+	ST7735_Message(0, 0, "Count1: ", Count1);
+	ST7735_Message(0, 1, "Count2: ", Count2);
+	ST7735_Message(0, 2, "Count3: ", Count3);
+	//EndCritical(tmp);
+}
+
+uint32_t writeCount1 = 0;
+uint32_t writeCount2 = 0;
+uint32_t writeCount3 = 0;
+void saveCounts(void){
+	while (1) {
+		long tmp = StartCritical();
+
+		int result;
+		
+		// saving Count1
+		result = saveForLCD(Count1, "count1.txt");
+		if (result == 0){
+			ST7735_Message(1,1, "C1 write success:", writeCount1);
+			writeCount1++;
+		}
+		
+		// saving Count2
+		result = saveForLCD(Count2, "count2.txt");
+		if (result == 0){
+			ST7735_Message(1,2, "C2 write success:", writeCount2);
+			writeCount2++;
+		}
+		
+		// saving Count3
+		result = saveForLCD(Count3, "count3.txt");
+		if (result == 0){
+			ST7735_Message(1,3, "C3 write success:", writeCount3);
+			writeCount3++;
+		}
+		
+		EndCritical(tmp);
+	}
 }
 
 int TestmainCheckpoint(){
@@ -711,7 +778,28 @@ int TestmainCheckpoint(){
 	}	return 0;
 }
 
+int create_threads_MJ(){
+	PLL_Init(Bus80MHz);
+	
+	//OS_AddPeriodicThread(&outputCounts, 500*TIME_2MS, 1);
+	
+	NumCreated = 0 ;
+	NumCreated += OS_AddThread(&Thread1b,128,0); 
+	NumCreated += OS_AddThread(&Thread2b,128,0);
+	NumCreated += OS_AddThread(&Thread3b,128,0);
+	NumCreated += OS_AddThread(&saveCounts,128,0);
 
+	return 0;
+}
+
+int Testmain_mj(){
+	OS_Init();          // initialize, disable interrupts
+	PortD_Init();       // profile user threads
+	
+	create_threads_MJ();
+	OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
+	return 0;
+}
 
 //*******************Trampoline for selecting main to execute**********
 int main(void) { 			// main 
@@ -720,13 +808,8 @@ int main(void) { 			// main
 	OS_AddPeriodicThread(&disk_timerproc,TIME_1MS,0);   // time out routines for disk
 	eFile_Init();
 	eFile_Mount();
+	
 	//TestmainCheckpoint();
-	
-	//char buff[64]; 
-	//strcpy(buff, "this is a test\n and another one");
-	//logToSDCard(buff);
-	
-	ST7735_Message(0, 0, "hello", 1234567);
-	
-	
+	Testmain_mj();	
+	//realmain();
 }

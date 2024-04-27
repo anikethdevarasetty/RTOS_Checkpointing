@@ -60,7 +60,7 @@ int Save_CheckpointFlag(int8_t i);
 int Load_Heap();
 int Load_RunPt();
 
-void logToSDCard(char *message);
+//void logToSDCard(char *message, char *filename));
 
 /**
  * @details  Initialize operating system, disable interrupts until OS_Launch.
