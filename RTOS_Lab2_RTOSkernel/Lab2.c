@@ -707,6 +707,30 @@ void outputCounts(void){
 	ST7735_Message(0, 2, "Count3: ", Count3);
 }
 
+int Save_LCDFlag(int8_t i){
+	if(eFile_Create("controlLCD.bin")){
+	}
+	
+	if(eFile_WOpen("controlLCD.bin")){
+		//ST7735_Message(0, 2, "control fail", 3);
+		return 1;
+	}
+	
+	int8_t data = i;
+  //write byte by byte
+	if(eFile_Write(data)){ //low byte		
+		return 1;
+	}
+	
+	if(eFile_WClose()){			
+		//ST7735_Message(0, 1, "close error", 3);
+		return 1;
+	}
+	//ST7735_Message(1, 3, "control success", 3);
+	return 0;
+}
+
+
 uint32_t writeCount1 = 0;
 uint32_t writeCount2 = 0;
 uint32_t writeCount3 = 0;
@@ -739,6 +763,7 @@ void saveCounts(void){
 			writeCount3++;
 		}
 		
+		//int controlFlag = Save_LCDFlag(1);
 		EndCritical(tmp);
 	}
 }
