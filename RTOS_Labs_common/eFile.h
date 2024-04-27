@@ -19,6 +19,7 @@
 #define MAX_FILES BLOCK_SIZE/ENTRY_SIZE //Maximum number of files can support in directory
 #define HEADER_SIZE 8 //Size of headers on non-directory blocks (4+2+2)
 
+//int saveForLCD(uint32_t value, char *filename);
 //Directory will be located in memory block 0 on the SD card
 //Each directory entry will be 16 bytes -> max of 512/16 entries
 struct dir_entry{

@@ -701,12 +701,10 @@ int saveForLCD(uint32_t value, char *filename){
 }
 
 void outputCounts(void){
-	//long tmp = StartCritical();
 	//output counts to LCD display
 	ST7735_Message(0, 0, "Count1: ", Count1);
 	ST7735_Message(0, 1, "Count2: ", Count2);
 	ST7735_Message(0, 2, "Count3: ", Count3);
-	//EndCritical(tmp);
 }
 
 uint32_t writeCount1 = 0;
@@ -715,27 +713,29 @@ uint32_t writeCount3 = 0;
 void saveCounts(void){
 	while (1) {
 		long tmp = StartCritical();
-
-		int result;
 		
+		int result;
 		// saving Count1
-		result = saveForLCD(Count1, "count1.txt");
+		ST7735_Message(0, 0, "Count1: ", Count1); // print the value
+		result = saveForLCD(Count1, "count1.txt"); // save them
 		if (result == 0){
-			ST7735_Message(1,1, "C1 write success:", writeCount1);
+			ST7735_Message(1,1, "C1 WS:", writeCount1);
 			writeCount1++;
 		}
 		
 		// saving Count2
+		ST7735_Message(0, 1, "Count2: ", Count2);
 		result = saveForLCD(Count2, "count2.txt");
 		if (result == 0){
-			ST7735_Message(1,2, "C2 write success:", writeCount2);
+			ST7735_Message(1,2, "C2 WS:", writeCount2);
 			writeCount2++;
 		}
 		
 		// saving Count3
+		ST7735_Message(0, 2, "Count3: ", Count3);
 		result = saveForLCD(Count3, "count3.txt");
 		if (result == 0){
-			ST7735_Message(1,3, "C3 write success:", writeCount3);
+			ST7735_Message(1,3, "C3 WS:", writeCount3);
 			writeCount3++;
 		}
 		
@@ -781,8 +781,6 @@ int TestmainCheckpoint(){
 int create_threads_MJ(){
 	PLL_Init(Bus80MHz);
 	
-	//OS_AddPeriodicThread(&outputCounts, 500*TIME_2MS, 1);
-	
 	NumCreated = 0 ;
 	NumCreated += OS_AddThread(&Thread1b,128,0); 
 	NumCreated += OS_AddThread(&Thread2b,128,0);
@@ -795,10 +793,9 @@ int create_threads_MJ(){
 int Testmain_mj(){
 	OS_Init();          // initialize, disable interrupts
 	PortD_Init();       // profile user threads
-	
 	create_threads_MJ();
 	OS_Launch(TIME_2MS); // doesn't return, interrupts enabled in here
-	return 0;
+	return 0; // never executes
 }
 
 //*******************Trampoline for selecting main to execute**********

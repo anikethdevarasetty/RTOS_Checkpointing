@@ -20,6 +20,33 @@ static FIL f;
 static FILINFO fi;
 
 
+//int saveForLCD(uint32_t value, char *filename){
+//	OS_bWait(&LCDFree);
+//	if (eFile_Create(filename)){
+//	}
+//	
+//	if (eFile_WOpen(filename)){
+//		OS_bSignal(&LCDFree);
+//		return 1; // write open error
+//	}
+//	
+//	char temp[20];
+//	sprintf(temp, "%d", value);
+//	for (int i = 0; i < 20; i++){
+//		if (temp[i] == 0) {
+//			break;
+//		}
+//		eFile_Write(temp[i]);
+//	}
+//	
+//	if (eFile_WClose()){
+//		OS_bSignal(&LCDFree);
+//		return 1; // write close error
+//	}
+//	OS_bSignal(&LCDFree);
+//	return 0;
+//}
+
 //---------- eFile_Init-----------------
 // Activate the file system, without formating
 // Input: none
