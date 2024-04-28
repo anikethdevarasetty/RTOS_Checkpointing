@@ -166,11 +166,11 @@ int Save_Heap(){
     }
 	}
 	if(eFile_WClose()){			
-		ST7735_Message(0, 1, "close error", 3);
+		ST7735_Message(0, 1, "close error", 999999);
 		return 1;
 	}	
 	
-	ST7735_Message(1,1, "heap success", 3);
+	ST7735_Message(1,1, "heap success", 999999);
 
 	return 0;
 }
@@ -295,10 +295,10 @@ int Save_RunPt(){
 	}
 	
 	if(eFile_WClose()){			
-		ST7735_Message(0, 1, "close error", 3);
+		ST7735_Message(0, 1, "close error", 999999);
 		return 1;
 	}
-	ST7735_Message(1, 2, "runpt success", 3);
+	ST7735_Message(1, 2, "runpt success", 999999);
 	return 0;
 }
 
@@ -309,7 +309,7 @@ int Save_CheckpointFlag(int8_t i){
 	}
 	
 	if(eFile_WOpen("control.bin")){
-		ST7735_Message(0, 2, "control fail", 3);
+		ST7735_Message(0, 2, "control fail", 999999);
 		return 1;
 	}
 	
@@ -321,10 +321,10 @@ int Save_CheckpointFlag(int8_t i){
 	}
 	
 	if(eFile_WClose()){			
-		ST7735_Message(0, 1, "close error", 3);
+		ST7735_Message(0, 1, "close error", 999999);
 		return 1;
 	}
-	ST7735_Message(1, 3, "control success", 3);
+	ST7735_Message(1, 3, "control success", 999999);
 	return 0;
 }
 

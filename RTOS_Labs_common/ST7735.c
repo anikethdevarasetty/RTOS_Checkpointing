@@ -1415,30 +1415,34 @@ void ST7735_Message(uint32_t  d, uint32_t  l, char *pt, int32_t value){
     ST7735_OutString("                    "); //Clear line
 		ST7735_SetCursor(0, l);
 		ST7735_OutString(pt);
-    if(value < 0) {
-      ST7735_OutString("-");
-      value = -value;
-    }
-    else {
-      ST7735_OutString(" ");
-    }
-    ST7735_OutUDec(value);
+		if (value != 999999){
+			if(value < 0) {
+				ST7735_OutString("-");
+				value = -value;
+			}
+			else {
+				ST7735_OutString(" ");
+			}
+			ST7735_OutUDec(value);
+		}
   }
   else if (d == 1){
     ST7735_SetCursor(0, l+7);
 		ST7735_OutString("                    "); //Clear line
 		ST7735_SetCursor(0, l+7);
     ST7735_OutString(pt);
-    if(value < 0) {
-      //ST7735_SetCursor(10, l+7);
-      ST7735_OutString("-");
-      value = -value;
-    }
-    else {
-      //ST7735_SetCursor(10, l+7);
-      ST7735_OutString(" ");
-    }
-    ST7735_OutUDec(value);
+		if (value != 999999) {
+			if(value < 0) {
+				//ST7735_SetCursor(10, l+7);
+				ST7735_OutString("-");
+				value = -value;
+			}
+			else {
+				//ST7735_SetCursor(10, l+7);
+				ST7735_OutString(" ");
+			}
+			ST7735_OutUDec(value);
+		}
   }
 	OS_bSignal(&LCDFree);
 }
