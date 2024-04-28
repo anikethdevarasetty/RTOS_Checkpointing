@@ -271,22 +271,23 @@ int CheckpointingOS(){
 	else {
 		char byte;
 		if(eFile_ReadNext(&byte)){
-			ST7735_Message(0, 1, "read error at ", 1);
+			ST7735_Message(0, 1, "read error at ", 999999);
 			eFile_RClose();
 			return 1;
 		}
 		if(eFile_RClose()){
-			ST7735_Message(0, 1, "read close error", 5);
+			ST7735_Message(0, 1, "read close error", 999999);
 			return 1;
 		}
 		int8_t saved = (int8_t) byte;
-		ST7735_Message(0, 1, "Press SW1 to load from SD", 1);
-		ST7735_Message(0, 2, "Press SW2 to clean start", 2);
+		ST7735_Message(0, 1, "Press SW1 to load from SD", 999999);
+		ST7735_Message(0, 2, "Press SW2 to clean start", 999999);
 		while(sw1 == 0 && sw2 == 0){}
 		ST7735_FillScreen(ST7735_BLACK);
 		int8_t restore = sw1 == 1? 1 : 0;
 	  sdload = !saved && restore;
 		if(sdload){
+			ST7735_Message(0, 0, "Checkpoint Recovered", 999999);
 			Load_Heap();
 			Load_RunPt();
 			OS_Checkpoint_Launch(TIME_2MS);
