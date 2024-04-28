@@ -433,7 +433,8 @@ int Snapshot_Heap(){
 void OS_Checkpoint_Launch(uint32_t theTimeSlice){
 	SysTick_Init(theTimeSlice);
 	//Timer4A_Init(&time_up_us, 80000000/1000000, 4); //1 us timer
-	OS_ClearMsTime();
+	//OS_ClearMsTime(); // don't want to clear the time after retrieving from checkpoint.
+	OS_checkpointingTime();
   StartFromCheckpoint(); // start on the first task
 }
 	
@@ -964,6 +965,10 @@ void OS_ClearMsTime(void){
   Timer3A_Init(time_upd_ms, 80000000/1000, 4);  //1 ms resolution
 	system_ms_time = 0;
 };
+
+void OS_checkpointingTime(void){
+	Timer3A_Init(time_upd_ms, 80000000/1000, 4);  //1 ms resolution
+}
 
 // ******** OS_MsTime ************
 // reads the current time in msec (solve for Lab 1)

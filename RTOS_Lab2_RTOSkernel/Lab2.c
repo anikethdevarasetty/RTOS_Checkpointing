@@ -213,6 +213,13 @@ void blink(){
 	}
 }
 
+void time(){
+	while(1){
+		ST7735_Message(0, 2, "Sys Time (s): ", OS_MsTime()/1000);
+		OS_Sleep(1000);
+	}
+}
+
 
 Sema4Type Snapshot;
 void Checkpoint(){
@@ -232,6 +239,7 @@ int create_threads(){
 	NumCreated += OS_AddThread(&array,128,0); 
 	NumCreated += OS_AddThread(&blink,128,0); 
 	NumCreated += OS_AddThread(&Thread3b,128,0); 
+	NumCreated += OS_AddThread(&time,128,0); 
 	NumCreated += OS_AddThread(&Checkpoint,128,0); 
 	return 0;
 }

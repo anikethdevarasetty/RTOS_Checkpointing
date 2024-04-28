@@ -62,6 +62,7 @@ int Load_RunPt();
 
 // added
 int log_variable(uint32_t value, char *filename);
+void OS_checkpointingTime(void);
 
 /**
  * @details  Initialize operating system, disable interrupts until OS_Launch.
