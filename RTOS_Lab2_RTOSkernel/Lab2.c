@@ -220,6 +220,7 @@ void Checkpoint(){
 		OS_Wait(&Snapshot);
 		int heapret = Save_Heap();
 		int runptret = Save_RunPt();
+		int count3ret = log_variable(Count3, "count3.txt");
 		Save_CheckpointFlag(heapret&runptret);
 		OS_Signal(&Snapshot);
 		OS_Sleep(1000);

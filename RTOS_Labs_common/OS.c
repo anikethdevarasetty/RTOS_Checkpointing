@@ -328,6 +328,30 @@ int Save_CheckpointFlag(int8_t i){
 	return 0;
 }
 
+int log_variable(uint32_t value, char *filename){
+	if (eFile_Create(filename)){
+		// don't return
+	}
+	
+	if (eFile_WOpen(filename)){
+		return 1; // write open error
+	}
+	
+	char temp[20];
+	sprintf(temp, "%d", value);
+	for (int i = 0; i < 20; i++){
+		if (temp[i] == 0) {
+			break;
+		}
+		eFile_Write(temp[i]);
+	}
+	
+	if (eFile_WClose()){
+		return 1; // write close error
+	}
+	return 0;
+}
+
 //************** Load_Runpt ******************
 int Load_RunPt(){
 	if(eFile_ROpen("runpt.bin")){

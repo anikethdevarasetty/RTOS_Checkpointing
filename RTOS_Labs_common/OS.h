@@ -60,6 +60,9 @@ int Save_CheckpointFlag(int8_t i);
 int Load_Heap();
 int Load_RunPt();
 
+// added
+int log_variable(uint32_t value, char *filename);
+
 /**
  * @details  Initialize operating system, disable interrupts until OS_Launch.
  * Initialize OS controlled I/O: serial, ADC, systick, LaunchPad I/O and timers.
