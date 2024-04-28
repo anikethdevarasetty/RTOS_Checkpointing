@@ -274,6 +274,26 @@ int Save_RunPt(){
 		return 1;
 	}
 	
+	//tail
+	data = system_ms_time;
+    //write byte by byte
+	if(eFile_Write(data & 0xFF)){ //low byte		
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 8) & 0xFF)){ //second byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 16) & 0xFF)){	//third byte
+	// error in writing	
+		return 1;
+	}
+	if(eFile_Write((data >> 24) & 0xFF)){	//high byte
+	// error in writing	
+		return 1;
+	}
+	
 	if(eFile_WClose()){			
 		ST7735_Message(0, 1, "close error", 3);
 		return 1;
@@ -350,6 +370,18 @@ int Load_RunPt(){
 		data |= byte << (j * 8);
 	}
 	tail = (TCB_t*) data;
+	
+	//time
+	data = 0;
+	for(int j = 0; j < 4; j++){
+		char byte;
+		if(eFile_ReadNext(&byte)){
+			eFile_RClose();
+			return 1;
+		}
+		data |= byte << (j * 8);
+	}
+	system_ms_time = (uint32_t) data;
 	
   if(eFile_RClose()){
     return 1;
