@@ -225,10 +225,22 @@ Sema4Type Snapshot;
 void Checkpoint(){
 	while(1){
 		OS_Wait(&Snapshot);
+		PD0 ^= 0x01;
 		int heapret = Save_Heap();
+		PD0 ^= 0x01;
+		
+		PD1 ^= 0x02;
 		int runptret = Save_RunPt();
+		PD1 ^= 0x02;
+		
+		PD2 ^= 0x04;
 		int count3ret = log_variable(Count3, "count3.txt");
+		PD2 ^= 0x04;
+		
+		PD3 ^= 0x08;
 		Save_CheckpointFlag(heapret&runptret);
+		PD3 ^= 0x08;
+		
 		OS_Signal(&Snapshot);
 		OS_Sleep(1000);
 	}

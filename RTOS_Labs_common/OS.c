@@ -76,7 +76,6 @@ uint32_t system_ms_time = 0;
   used for preemptive thread switch
  *------------------------------------------------------------------------------*/
 void SysTick_Handler(void) {
-  //PD3 ^= 0x08;
 	//PD3 ^= 0x08;
 	
 	//sleep counter checks
@@ -90,7 +89,6 @@ void SysTick_Handler(void) {
 	
 	//ContextSwitch 
 	ContextSwitch();
-	
 	//PD3 ^= 0x08;
 } // end SysTick_Handler
 
@@ -952,7 +950,7 @@ uint32_t OS_TimeDifference(uint32_t start, uint32_t stop){
 void time_upd_ms(){
 	int32_t status = StartCritical();
 	system_ms_time++;
-	PD3 ^= 0x08;
+	//PD3 ^= 0x08;
 	EndCritical(status);
 }
 
