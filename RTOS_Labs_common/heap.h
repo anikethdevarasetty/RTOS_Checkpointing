@@ -12,6 +12,7 @@
 
 #ifndef HEAP_H
 #define HEAP_H
+#define HEAPSIZE 2000
 
 #include <stdint.h>
 

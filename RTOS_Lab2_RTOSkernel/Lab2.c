@@ -71,7 +71,7 @@ extern int32_t MaxJitter;             // largest time jitter between interrupts 
 extern uint32_t const JitterSize;
 extern uint32_t JitterHistogram[];
 
-#define HEAPSIZE 2000
+//#define HEAPSIZE 2000
 extern int32_t heap[HEAPSIZE];
 extern int32_t heapSnapshot[HEAPSIZE];
 volatile int32_t sdload;
@@ -225,9 +225,9 @@ Sema4Type Snapshot;
 void Checkpoint(){
 	while(1){
 		OS_Wait(&Snapshot);
-		PD0 ^= 0x01;
+		//PD0 ^= 0x01;
 		int heapret = Save_Heap();
-		PD0 ^= 0x01;
+		//PD0 ^= 0x01;
 		
 		PD1 ^= 0x02;
 		int runptret = Save_RunPt();

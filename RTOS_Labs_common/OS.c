@@ -42,7 +42,7 @@ extern int StartFromCheckpoint(void);
 
 extern Sema4Type Snapshot;
 
-#define HEAPSIZE 2000
+//#define HEAPSIZE 2000
 
 extern int32_t heap[HEAPSIZE];
 
@@ -143,7 +143,7 @@ int Save_Heap(){
 	if (eFile_WOpen("heap.bin")){
 		return 1;
 	}
-	for(int i = 0; i < 2000; i++){
+	for(int i = 0; i < HEAPSIZE; i++){
     int32_t data = heapSnapshot[i];
     //write byte by byte
     if(eFile_Write(data & 0xFF)){ //low byte		
@@ -181,7 +181,7 @@ int Load_Heap(){
 	
 	int starti;
 	int32_t size;
-	for(int i = 0; i < 2000; i++){
+	for(int i = 0; i < HEAPSIZE; i++){
 		//read 2000 words from the file byte by byte
     int32_t data = 0;
     for(int j = 0; j < 4; j++){
@@ -412,18 +412,21 @@ int Load_RunPt(){
 	return 0;
 }
 
+#define PD0  (*((volatile uint32_t *)0x40007004))
 
 // ******** Snapshot_Heap ***********
 int Snapshot_Heap(){
+	PD0 ^= 0x01;
 	if(Snapshot.Value <= 0){
 		return 1;
 	}
 	Snapshot.Value -= 1;
-	for(int i = 0; i < 2000; i++){
+	for(int i = 0; i < HEAPSIZE; i++){
 		heapSnapshot[i] = heap[i];
 	}
 	SavedRunPt = RunPt;
 	OS_Signal(&Snapshot);
+	PD0 ^= 0x01;
 	return 0;
 }
 

@@ -33,7 +33,7 @@
 
 Sema4Type HeapSema; 
 
-#define HEAPSIZE 2000
+//#define HEAPSIZE 2000
 
 int32_t heap[HEAPSIZE];
 
